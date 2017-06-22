@@ -1,0 +1,17 @@
+private ObjectId id;
+    private String repoUrl;
+    private String title;
+    private String compareBranch;
+    private String baseBranch;
+    private String user;
+    private String pullRequestNumber;
+    private String state;
+    private int numberOfCommits;
+    private int numberOfComments;
+    private int numberOfFilesChanged;
+    private long createdAtTimeStamp;
+    private long closedAtTimeStamp;
+    private long mergedAtTimeStamp;
+    private long timestamp;
+    private boolean merged;
+    private ObjectId collectorItemId;
