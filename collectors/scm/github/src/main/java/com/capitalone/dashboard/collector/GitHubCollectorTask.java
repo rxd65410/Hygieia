@@ -144,6 +144,14 @@ public class GitHubCollectorTask extends CollectorTask<Collector> {
                             commitCount++;
                         }
                     }
+                    for (PullRequest pullRequest : gitHubClient.getPullRequests(repo, firstRun)) {
+                        LOG.debug(pullRequest.getTimestamp() + ":::" + pullRequest.getTitle());
+                        if (isNewPullRequest(repo, pullRequest)) {
+                            pullRequest.setCollectorItemId(repo.getId());
+                            pullRequestRepository.save(pullRequest);
+                            pullRequestCount++;
+                        }
+                    }
                     repo.setLastUpdated(System.currentTimeMillis());
                 } catch (HttpStatusCodeException hc) {
                     LOG.error("Error fetching commits for:" + repo.getRepoUrl(), hc);
