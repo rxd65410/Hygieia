@@ -1,16 +1,15 @@
 package com.capitalone.dashboard.collector;
 
 
-import com.capitalone.dashboard.model.CollectionError;
+import com.capitalone.dashboard.model.PullRequest;
+import com.capitalone.dashboard.model.GitHubRepo;
 import com.capitalone.dashboard.model.Collector;
 import com.capitalone.dashboard.model.CollectorItem;
 import com.capitalone.dashboard.model.CollectorType;
 import com.capitalone.dashboard.model.Commit;
-import com.capitalone.dashboard.model.GitHubRepo;
-import com.capitalone.dashboard.repository.BaseCollectorRepository;
-import com.capitalone.dashboard.repository.CommitRepository;
-import com.capitalone.dashboard.repository.ComponentRepository;
-import com.capitalone.dashboard.repository.GitHubRepoRepository;
+import com.capitalone.dashboard.model.CollectionError;
+
+import com.capitalone.dashboard.repository.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.bson.types.ObjectId;
@@ -38,6 +37,7 @@ public class GitHubCollectorTask extends CollectorTask<Collector> {
     private final GitHubClient gitHubClient;
     private final GitHubSettings gitHubSettings;
     private final ComponentRepository dbComponentRepository;
+    private final PullRequestRepository pullRequestRepository;
     private static final long FOURTEEN_DAYS_MILLISECONDS = 14 * 24 * 60 * 60 * 1000;
 
     @Autowired
@@ -47,7 +47,7 @@ public class GitHubCollectorTask extends CollectorTask<Collector> {
                                CommitRepository commitRepository,
                                GitHubClient gitHubClient,
                                GitHubSettings gitHubSettings,
-                               ComponentRepository dbComponentRepository) {
+                               ComponentRepository dbComponentRepository, PullRequestRepository pullRequestRepository) {
         super(taskScheduler, "GitHub");
         this.collectorRepository = collectorRepository;
         this.gitHubRepoRepository = gitHubRepoRepository;
@@ -55,6 +55,7 @@ public class GitHubCollectorTask extends CollectorTask<Collector> {
         this.gitHubClient = gitHubClient;
         this.gitHubSettings = gitHubSettings;
         this.dbComponentRepository = dbComponentRepository;
+        this.pullRequestRepository = pullRequestRepository;
     }
 
     @Override
@@ -126,6 +127,7 @@ public class GitHubCollectorTask extends CollectorTask<Collector> {
         long start = System.currentTimeMillis();
         int repoCount = 0;
         int commitCount = 0;
+        int pullRequestCount = 0;
 
         clean(collector);
         for (GitHubRepo repo : enabledRepos(collector)) {
@@ -144,14 +146,17 @@ public class GitHubCollectorTask extends CollectorTask<Collector> {
                             commitCount++;
                         }
                     }
+
                     for (PullRequest pullRequest : gitHubClient.getPullRequests(repo, firstRun)) {
                         LOG.debug(pullRequest.getTimestamp() + ":::" + pullRequest.getTitle());
-                        if (isNewPullRequest(repo, pullRequest)) {
                             pullRequest.setCollectorItemId(repo.getId());
+                            PullRequest existing = pullRequestRepository.findByCollectorItemIdAndPullRequestNumber(
+                                    pullRequest.getCollectorItemId(),pullRequest.getPullRequestNumber());
+                            if(existing!=null) pullRequest.setId(existing.getId());
                             pullRequestRepository.save(pullRequest);
                             pullRequestCount++;
-                        }
                     }
+
                     repo.setLastUpdated(System.currentTimeMillis());
                 } catch (HttpStatusCodeException hc) {
                     LOG.error("Error fetching commits for:" + repo.getRepoUrl(), hc);
@@ -169,6 +174,7 @@ public class GitHubCollectorTask extends CollectorTask<Collector> {
         }
         log("Repo Count", start, repoCount);
         log("New Commits", start, commitCount);
+        log("New PullRequests", start, pullRequestCount);
 
         log("Finished", start);
     }

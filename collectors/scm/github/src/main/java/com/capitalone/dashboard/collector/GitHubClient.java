@@ -2,6 +2,8 @@ package com.capitalone.dashboard.collector;
 
 import com.capitalone.dashboard.model.Commit;
 import com.capitalone.dashboard.model.GitHubRepo;
+import com.capitalone.dashboard.model.PullRequest;
+import org.springframework.web.client.RestClientException;
 
 import java.util.List;
 
@@ -20,4 +22,5 @@ public interface GitHubClient {
 
 	List<Commit> getCommits(GitHubRepo repo, boolean firstRun);
 
+    List<PullRequest> getPullRequests(GitHubRepo repo, boolean firstRun) throws RestClientException;
 }
