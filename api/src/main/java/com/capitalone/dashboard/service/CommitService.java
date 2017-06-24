@@ -3,7 +3,9 @@ package com.capitalone.dashboard.service;
 import com.capitalone.dashboard.misc.HygieiaException;
 import com.capitalone.dashboard.model.Commit;
 import com.capitalone.dashboard.model.DataResponse;
+import com.capitalone.dashboard.model.PullRequest;
 import com.capitalone.dashboard.request.CommitRequest;
+import com.capitalone.dashboard.request.PrRequest;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
@@ -16,6 +18,8 @@ public interface CommitService {
      * @return commits matching criteria
      */
     DataResponse<Iterable<Commit>> search(CommitRequest request);
+
+    DataResponse<Iterable<PullRequest>> search(PrRequest request);
 
     String createFromGitHubv3(JSONObject request) throws ParseException, HygieiaException;
 }

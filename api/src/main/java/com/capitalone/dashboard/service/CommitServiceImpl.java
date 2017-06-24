@@ -1,17 +1,12 @@
 package com.capitalone.dashboard.service;
 
 import com.capitalone.dashboard.misc.HygieiaException;
-import com.capitalone.dashboard.model.Collector;
-import com.capitalone.dashboard.model.CollectorItem;
-import com.capitalone.dashboard.model.CollectorType;
-import com.capitalone.dashboard.model.Commit;
-import com.capitalone.dashboard.model.Component;
-import com.capitalone.dashboard.model.DataResponse;
-import com.capitalone.dashboard.model.QCommit;
+import com.capitalone.dashboard.model.*;
 import com.capitalone.dashboard.repository.CollectorRepository;
 import com.capitalone.dashboard.repository.CommitRepository;
 import com.capitalone.dashboard.repository.ComponentRepository;
 import com.capitalone.dashboard.request.CommitRequest;
+import com.capitalone.dashboard.request.PrRequest;
 import com.mysema.query.BooleanBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
@@ -85,6 +80,11 @@ public class CommitServiceImpl implements CommitService {
 
         Collector collector = collectorRepository.findOne(item.getCollectorId());
         return new DataResponse<>(commitRepository.findAll(builder.getValue()), collector.getLastExecuted());
+    }
+
+    @Override
+    public DataResponse<Iterable<PullRequest>> search(PrRequest request) {
+        return null;
     }
 
     @Override
