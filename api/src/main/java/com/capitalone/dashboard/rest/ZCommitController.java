@@ -37,6 +37,10 @@ public class ZCommitController {
         return commitService.search(request);
     }
 
+    @RequestMapping(value = "/pullRequest", method = GET, produces = APPLICATION_JSON_VALUE)
+    public DataResponse<Iterable<PullRequest>> search(@Valid PrRequest request) {
+        return commitService.search(request);
+    }
 
     @RequestMapping(value = "/commit/github/v3", method = POST,
             consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
