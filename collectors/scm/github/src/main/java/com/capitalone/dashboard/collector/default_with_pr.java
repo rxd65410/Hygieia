@@ -37,8 +37,8 @@ public class DefaultGitHubClient implements GitHubClient {
     private static final Log LOG = LogFactory.getLog(DefaultGitHubClient.class);
 
     private final GitHubSettings settings;
-
     private final RestOperations restOperations;
+
     private static final String SEGMENT_API = "/api/v3/repos/";
     private static final String PUBLIC_GITHUB_REPO_HOST = "api.github.com/repos/";
     private static final String PUBLIC_GITHUB_HOST_NAME = "github.com";
@@ -59,6 +59,7 @@ public class DefaultGitHubClient implements GitHubClient {
 
         // format URL
         String apiUrl = formatApiUrl(repo);
+        LOG.info("ravi apiurl is : " + apiUrl);
         Calendar cal = getFirstRunDaysHistoryDate(repo,firstRun);
 
 
@@ -66,6 +67,7 @@ public class DefaultGitHubClient implements GitHubClient {
 
         String queryUrl = apiUrl.concat("/commits?sha=" + repo.getBranch()
                 + "&since=" + thisMoment);
+        LOG.info("ravi query url is "+queryUrl);
         /*
 		 * Calendar cal = Calendar.getInstance(); cal.setTime(dateInstance);
 		 * cal.add(Calendar.DATE, -30); Date dateBefore30Days = cal.getTime();
@@ -78,6 +80,7 @@ public class DefaultGitHubClient implements GitHubClient {
         int pageNumber = 1;
         String queryUrlPage = queryUrl;
         while (!lastPage) {
+            LOG.info("ravi query url page is "+queryUrlPage);
             ResponseEntity<String> response = makeRestCall(queryUrlPage, repo.getUserId(), decryptedPassword);
             JSONArray jsonArray = paresAsArray(response);
             for (Object item : jsonArray) {
@@ -186,7 +189,7 @@ public class DefaultGitHubClient implements GitHubClient {
     }
 
     @Override
-    public List<PullRequest> getPullRequests(GitHubRepo repo, boolean firstRun) {
+    public List<PullRequest> getPullRequests(GitHubRepo repo, boolean firstRun) throws RestClientException{
         List<PullRequest> pullRequests = new ArrayList<>();
         // format URL
         String apiUrl = formatApiUrl(repo);
@@ -226,8 +229,8 @@ public class DefaultGitHubClient implements GitHubClient {
                 JSONObject userObject = (JSONObject) jsonObject.get("user");
                 String user = str(userObject, "login");
                 //Get commits, reviwers, comments details...
-                List<String> comments = getReviewCommentsOnPullRequest(str(jsonObject, "review_comments_url"), repo.getUserId(), decryptedPassword, "user");
-                List<String> commits = getCommitsOnPullRequest(str(jsonObject, "commits_url"), repo.getUserId(), decryptedPassword, "committer");
+                List<String> comments = getReviewCommentsOnPullRequest(str(jsonObject, "review_comments_url"), repo.getUserId(), decryptedPassword);
+                List<String> commits = getCommitsOnPullRequest(str(jsonObject, "commits_url"), repo.getUserId(), decryptedPassword);
 
                 PullRequest pullRequest = new PullRequest();
                 pullRequest.setRepoUrl(repo.getRepoUrl());
@@ -258,15 +261,15 @@ public class DefaultGitHubClient implements GitHubClient {
     }
 
 
-    private List<String> getCommitsOnPullRequest(String commitsUrl, String userId, String decryptedPassword, String key) {
-        return getUsersFromUrl(commitsUrl,userId,decryptedPassword,key);
+    private List<String> getCommitsOnPullRequest(String commitsUrl, String userId, String decryptedPassword) {
+        return getUsersFromUrl(commitsUrl,userId,decryptedPassword,"committer");
     }
 
-    private List<String> getReviewCommentsOnPullRequest(String reviewCommentsUrl, String userId, String decryptedPassword, String key) {
-        return getUsersFromUrl(reviewCommentsUrl, userId, decryptedPassword,key);
+    private List<String> getReviewCommentsOnPullRequest(String reviewCommentsUrl, String userId, String decryptedPassword) {
+        return getUsersFromUrl(reviewCommentsUrl, userId, decryptedPassword, "user");
     }
 
-    private List<String> getUsersFromUrl(String url, String userId, String decryptedPassword,String key) {
+    private List<String> getUsersFromUrl(String url, String userId, String decryptedPassword,String key) throws RestClientException{
         List<String> users = new ArrayList<>();
         ResponseEntity<String> response = makeRestCall(url, userId, decryptedPassword);
         JSONArray reviewCommentsJsonArray = paresAsArray(response);
@@ -317,8 +320,10 @@ public class DefaultGitHubClient implements GitHubClient {
 
     private ResponseEntity<String> makeRestCall(String url, String userId,
                                                 String password) {
+
         // Basic Auth only.
         if (!"".equals(userId) && !"".equals(password)) {
+//            restOperations.exchange()
             return restOperations.exchange(url, HttpMethod.GET,
                     new HttpEntity<>(createHeaders(userId, password)),
                     String.class);
