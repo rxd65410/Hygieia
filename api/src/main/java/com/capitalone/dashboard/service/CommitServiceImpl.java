@@ -84,7 +84,37 @@ public class CommitServiceImpl implements CommitService {
 
     @Override
     public DataResponse<Iterable<PullRequest>> search(PrRequest request) {
-        return null;
+	QPullRequest pullRequest = new QPullRequest("search");
+        BooleanBuilder builder = new BooleanBuilder();
+        Component component = componentRepository.findOne(request.getComponentId());
+        CollectorItem item = (component != null) ? component.getFirstCollectorItemForType(CollectorType.SCM) : null;
+        if (item == null) {
+            Iterable<PullRequest> results = new ArrayList<>();
+            return new DataResponse<>(results, new Date().getTime());
+        }
+        builder.and(pullRequest.collectorItemId.eq(item.getId()));
+
+        if (request.getNumberOfDays() != null) {
+            long endTimeTarget = new LocalDate().minusDays(request.getNumberOfDays()).toDate().getTime();
+            builder.and(pullRequest.timestamp.goe(endTimeTarget));
+        } else if (request.validCommitDateRange()) {
+            builder.and(pullRequest.timestamp.between(request.getPullRequestDateBegins(), request.getPullRequestDateEnds()));
+        }
+
+        if (!request.getRevisionNumbers().isEmpty()) {
+            builder.and(pullRequest.pullRequestNumber.in(request.getRevisionNumbers()));
+        }
+
+        if (!request.getAuthors().isEmpty()) {
+            builder.and(pullRequest.user.in(request.getAuthors()));
+        }
+
+        if (StringUtils.isNotBlank(request.getMessageContains())) {
+            builder.and(pullRequest.title.contains(request.getMessageContains()));
+        }
+
+        Collector collector = collectorRepository.findOne(item.getCollectorId());
+        return new DataResponse<>(pullRequestRepository.findAll(builder.getValue()), collector.getLastExecuted());
     }
 
     @Override
