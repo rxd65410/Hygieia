@@ -11,14 +11,14 @@
 
         ctrl.commitChartOptions = {
             plugins: [
-                Chartist.plugins.gridBoundaries(),
+                //Chartist.plugins.gridBoundaries(),
                 Chartist.plugins.lineAboveArea(),
-                Chartist.plugins.pointHalo(),
+                //Chartist.plugins.pointHalo(),
                 Chartist.plugins.ctPointClick({
                     onClick: showDetail
                 }),
                 Chartist.plugins.axisLabels({
-                    stretchFactor: 1.4,
+                    stretchFactor: 1.8,
                     axisX: {
                         labels: [
                             moment().subtract(14, 'days').format('MMM DD'),
@@ -27,12 +27,12 @@
                         ]
                     }
                 }),
-                Chartist.plugins.ctPointLabels({
-                    textAnchor: 'middle'
-                })
+               /* Chartist.plugins.ctPointLabels({
+                    //textAnchor: 'middle'
+                })*/
             ],
-            showArea: true,
-            lineSmooth: false,
+            showArea: false,
+            lineSmooth: true,
             fullWidth: true,
             axisY: {
                 offset: 30,
@@ -45,6 +45,10 @@
         };
 
         ctrl.commits = [];
+        ctrl.totalCommitsCount = [];
+        ctrl.totalOpenPrsCount = [];
+        ctrl.totalClosedPrsCount = [];
+
         ctrl.pullRequests = [];
         ctrl.showDetail = showDetail;
         ctrl.load = function () {
@@ -87,10 +91,12 @@
         }
 
         var groupedCommitData = [];
+        var groupedOpenPr = [];
+        var groupedClosedPr = [];
 
         function processCommitResponse(data, numberOfDays) {
             // get total commits by day
-            var commits = [];
+            //var commits = [];
             var groups = _(data).sortBy('timestamp')
                 .groupBy(function (item) {
                     //console.log(moment.duration(moment().diff(moment(item.scmCommitTimestamp))).asHours());
@@ -98,30 +104,28 @@
                 }).value();
 
             var totalCommits=0;
+            ctrl.totalCommitsCount = [];
             for (var x = -1 * numberOfDays + 1; x <= 0; x++) {
                 if (groups[x]) {
                     totalCommits = totalCommits + groups[x].length;
-                    commits.push(totalCommits);
+                    ctrl.totalCommitsCount.push(totalCommits);
                     groupedCommitData.push(groups[x]);
                 }
                 else {
-                    commits.push(totalCommits);
+                    ctrl.totalCommitsCount.push(totalCommits);
                     groupedCommitData.push([]);
                 }
             }
 
             //update charts
-            if (commits.length) {
+           /* if (ctrl.totalCommitsCount.length) {
                 var labels = [];
-                _(commits).forEach(function (c) {
-                    labels.push('');
-                });
-
+                console.log("update in commits");
                 ctrl.commitChartData = {
-                    series: [commits],
+                    series: [ctrl.totalCommitsCount],
                     labels: labels
                 };
-            }
+            }*/
 
 
             // group get total counts and contributors
@@ -175,16 +179,76 @@
             ctrl.lastSevenDaysContributorCount = lastSevenDaysContributors.length;
             ctrl.lastFourteenDaysCommitCount = lastFourteenDayCount;
             ctrl.lastFourteenDaysContributorCount = lastFourteenDaysContributors.length;
+        }
 
-
-            function toMidnight(date) {
+        function toMidnight(date) {
                 date.setHours(0, 0, 0, 0);
                 return date;
             }
-        }
 
         function processPrResponse(data,numberOfDays){
+            //var openPullRequests = [];
+            //var closedPullRequests = [];
+            console.log(data);
+            var groupsOpen = _(data).sortBy('timestamp')
+                .groupBy(function (item) {
+                    var val = Math.floor(moment.duration(moment().diff(moment(item.createdAtTimeStamp))).asDays());
+                    if(val >= numberOfDays){
+                        val = numberOfDays-1;
+                    }
+                    console.log(val);
+                    return -1 * val;
+                }).value();
 
+            console.log("groups");
+            console.log(groupsOpen);
+            var groupsClosed = _(data).sortBy('timestamp')
+                .groupBy(function (item) {
+                    //console.log(moment.duration(moment().diff(moment(item.scmCommitTimestamp))).asHours());
+                    return -1 * Math.floor(moment.duration(moment().diff(moment(item.closedAtTimeStamp))).asDays());
+                }).value();
+
+            var totalOpen=0;
+            var totalClose=0;
+
+            ctrl.totalOpenPrsCount=[];
+            ctrl.totalClosedPrsCount=[];
+            for (var x = -1 * numberOfDays+1; x <= 0; x++) {
+                if (groupsOpen[x]) {
+                    totalOpen = totalOpen + groupsOpen[x].length;
+                    ctrl.totalOpenPrsCount.push(totalOpen);
+                    groupedOpenPr.push(groupsOpen[x]);
+                }
+                else {
+                    ctrl.totalOpenPrsCount.push(totalOpen);
+                    groupedOpenPr.push([]);
+                }
+                if (groupsClosed[x]) {
+                    totalClose = totalClose + groupsClosed[x].length;
+                    ctrl.totalClosedPrsCount.push(totalClose);
+                    groupedClosedPr.push(groupsClosed[x]);
+                }
+                else {
+                    ctrl.totalClosedPrsCount.push(totalClose);
+                    groupedClosedPr.push([]);
+                }
+            }
+
+            //update charts
+            if (ctrl.totalClosedPrsCount.length || ctrl.totalOpenPrsCount.length || ctrl.totalCommitsCount) {
+                var labels = [];
+                console.log("update in pr");
+                ctrl.commitChartData = {
+                    //series: [ctrl.totalCommitsCount,ctrl.totalOpenPrsCount,ctrl.totalClosedPrsCount],
+                    series: [   { name : 'ravi',
+                                  data : ctrl.totalCommitsCount},
+                                { name : 'teja',
+                                  data : ctrl.totalOpenPrsCount},
+                                { name : 'dug',
+                                  data : ctrl.totalClosedPrsCount}],
+                    labels: labels
+                };
+            }
         }
 
     }

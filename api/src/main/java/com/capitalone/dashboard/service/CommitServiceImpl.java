@@ -99,9 +99,9 @@ public class CommitServiceImpl implements CommitService {
         builder.and(pullRequest.collectorItemId.eq(item.getId()));
         if (request.getNumberOfDays() != null) {
             long endTimeTarget = new LocalDate().minusDays(request.getNumberOfDays()).toDate().getTime();
-            builder.and(pullRequest.mergedAtTimeStamp.goe(endTimeTarget))
-                    .or(pullRequest.closedAtTimeStamp.goe(endTimeTarget))
-                    .or(pullRequest.state.eq("open"));
+            builder.andAnyOf(pullRequest.mergedAtTimeStamp.goe(endTimeTarget),
+                    pullRequest.closedAtTimeStamp.goe(endTimeTarget),
+                    pullRequest.state.eq("open"));
         } else if (request.validDateRange()) {
             builder.and(pullRequest.timestamp.between(request.getPullRequestDateBegins(), request.getPullRequestDateEnds()));
         }

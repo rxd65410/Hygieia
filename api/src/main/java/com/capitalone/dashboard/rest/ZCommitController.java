@@ -25,8 +25,6 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @RestController
 public class ZCommitController {
 
-
-
     private final CommitService commitService;
 
     @Autowired
