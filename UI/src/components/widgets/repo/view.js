@@ -45,6 +45,7 @@
         };
 
         ctrl.commits = [];
+        ctrl.pullRequests = [];
         ctrl.showDetail = showDetail;
         ctrl.load = function () {
             var deferred = $q.defer();
@@ -52,13 +53,17 @@
                 componentId: $scope.widgetConfig.componentId,
                 numberOfDays: 14
             };
-
             codeRepoData.details(params).then(function (data) {
-                processResponse(data.result, params.numberOfDays);
-                ctrl.lastUpdated = data.lastUpdated;
+                processCommitResponse(data.result, params.numberOfDays);
+                //ctrl.lastUpdated = data.lastUpdated;
             }).then(function () {
-                collectorData.getCollectorItem($scope.widgetConfig.componentId, 'scm').then(function (data) {
-                    deferred.resolve( {lastUpdated: ctrl.lastUpdated, collectorItem: data});
+                codeRepoData.prDetails(params).then(function (prData) {
+                    processPrResponse(prData.result, params.numberOfDays);
+                    ctrl.lastUpdated = prData.lastUpdated;
+                }).then(function () {
+                    collectorData.getCollectorItem($scope.widgetConfig.componentId, 'scm').then(function (data) {
+                        deferred.resolve( {lastUpdated: ctrl.lastUpdated, collectorItem: data});
+                    });
                 });
             });
             return deferred.promise;
@@ -83,21 +88,24 @@
 
         var groupedCommitData = [];
 
-        function processResponse(data, numberOfDays) {
+        function processCommitResponse(data, numberOfDays) {
             // get total commits by day
             var commits = [];
             var groups = _(data).sortBy('timestamp')
                 .groupBy(function (item) {
+                    //console.log(moment.duration(moment().diff(moment(item.scmCommitTimestamp))).asHours());
                     return -1 * Math.floor(moment.duration(moment().diff(moment(item.scmCommitTimestamp))).asDays());
                 }).value();
 
+            var totalCommits=0;
             for (var x = -1 * numberOfDays + 1; x <= 0; x++) {
                 if (groups[x]) {
-                    commits.push(groups[x].length);
+                    totalCommits = totalCommits + groups[x].length;
+                    commits.push(totalCommits);
                     groupedCommitData.push(groups[x]);
                 }
                 else {
-                    commits.push(0);
+                    commits.push(totalCommits);
                     groupedCommitData.push([]);
                 }
             }
@@ -173,6 +181,10 @@
                 date.setHours(0, 0, 0, 0);
                 return date;
             }
+        }
+
+        function processPrResponse(data,numberOfDays){
+
         }
 
     }

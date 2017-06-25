@@ -5,6 +5,7 @@ import com.capitalone.dashboard.model.*;
 import com.capitalone.dashboard.repository.CollectorRepository;
 import com.capitalone.dashboard.repository.CommitRepository;
 import com.capitalone.dashboard.repository.ComponentRepository;
+import com.capitalone.dashboard.repository.PullRequestRepository;
 import com.capitalone.dashboard.request.CommitRequest;
 import com.capitalone.dashboard.request.PrRequest;
 import com.mysema.query.BooleanBuilder;
@@ -30,16 +31,19 @@ public class CommitServiceImpl implements CommitService {
     private final ComponentRepository componentRepository;
     private final CollectorRepository collectorRepository;
     private final CollectorService collectorService;
+    private final PullRequestRepository pullRequestRepository;
 
     @Autowired
     public CommitServiceImpl(CommitRepository commitRepository,
                              ComponentRepository componentRepository,
                              CollectorRepository collectorRepository,
-                             CollectorService colllectorService) {
+                             CollectorService colllectorService,
+                             PullRequestRepository pullRequestRepository) {
         this.commitRepository = commitRepository;
         this.componentRepository = componentRepository;
         this.collectorRepository = collectorRepository;
         this.collectorService = colllectorService;
+        this.pullRequestRepository = pullRequestRepository;
     }
 
     @Override
@@ -84,7 +88,7 @@ public class CommitServiceImpl implements CommitService {
 
     @Override
     public DataResponse<Iterable<PullRequest>> search(PrRequest request) {
-	QPullRequest pullRequest = new QPullRequest("search");
+	    QPullRequest pullRequest = new QPullRequest("search");
         BooleanBuilder builder = new BooleanBuilder();
         Component component = componentRepository.findOne(request.getComponentId());
         CollectorItem item = (component != null) ? component.getFirstCollectorItemForType(CollectorType.SCM) : null;
@@ -93,11 +97,12 @@ public class CommitServiceImpl implements CommitService {
             return new DataResponse<>(results, new Date().getTime());
         }
         builder.and(pullRequest.collectorItemId.eq(item.getId()));
-
         if (request.getNumberOfDays() != null) {
             long endTimeTarget = new LocalDate().minusDays(request.getNumberOfDays()).toDate().getTime();
-            builder.and(pullRequest.timestamp.goe(endTimeTarget));
-        } else if (request.validCommitDateRange()) {
+            builder.and(pullRequest.mergedAtTimeStamp.goe(endTimeTarget))
+                    .or(pullRequest.closedAtTimeStamp.goe(endTimeTarget))
+                    .or(pullRequest.state.eq("open"));
+        } else if (request.validDateRange()) {
             builder.and(pullRequest.timestamp.between(request.getPullRequestDateBegins(), request.getPullRequestDateEnds()));
         }
 
@@ -112,7 +117,7 @@ public class CommitServiceImpl implements CommitService {
         if (StringUtils.isNotBlank(request.getMessageContains())) {
             builder.and(pullRequest.title.contains(request.getMessageContains()));
         }
-
+        //builder.or(pullRequest.state.eq("Open"));
         Collector collector = collectorRepository.findOne(item.getCollectorId());
         return new DataResponse<>(pullRequestRepository.findAll(builder.getValue()), collector.getLastExecuted());
     }

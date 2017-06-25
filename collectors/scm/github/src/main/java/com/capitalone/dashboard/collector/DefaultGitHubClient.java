@@ -59,7 +59,6 @@ public class DefaultGitHubClient implements GitHubClient {
 
         // format URL
         String apiUrl = formatApiUrl(repo);
-        LOG.info("ravi apiurl is : " + apiUrl);
         Calendar cal = getFirstRunDaysHistoryDate(repo,firstRun);
 
 
@@ -67,7 +66,6 @@ public class DefaultGitHubClient implements GitHubClient {
 
         String queryUrl = apiUrl.concat("/commits?sha=" + repo.getBranch()
                 + "&since=" + thisMoment);
-        LOG.info("ravi query url is "+queryUrl);
         /*
 		 * Calendar cal = Calendar.getInstance(); cal.setTime(dateInstance);
 		 * cal.add(Calendar.DATE, -30); Date dateBefore30Days = cal.getTime();
@@ -80,7 +78,6 @@ public class DefaultGitHubClient implements GitHubClient {
         int pageNumber = 1;
         String queryUrlPage = queryUrl;
         while (!lastPage) {
-            LOG.info("ravi query url page is "+queryUrlPage);
             ResponseEntity<String> response = makeRestCall(queryUrlPage, repo.getUserId(), decryptedPassword);
             JSONArray jsonArray = paresAsArray(response);
             for (Object item : jsonArray) {

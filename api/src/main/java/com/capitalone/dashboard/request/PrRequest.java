@@ -92,4 +92,8 @@ public class PrRequest {
     public void setMessageContains(String messageContains) {
         this.messageContains = messageContains;
     }
+
+    public boolean validDateRange() {
+        return pullRequestDateBegins != null || pullRequestDateEnds != null;
+    }
 }
