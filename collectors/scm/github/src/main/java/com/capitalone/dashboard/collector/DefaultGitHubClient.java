@@ -320,7 +320,6 @@ public class DefaultGitHubClient implements GitHubClient {
 
         // Basic Auth only.
         if (!"".equals(userId) && !"".equals(password)) {
-//            restOperations.exchange()
             return restOperations.exchange(url, HttpMethod.GET,
                     new HttpEntity<>(createHeaders(userId, password)),
                     String.class);
