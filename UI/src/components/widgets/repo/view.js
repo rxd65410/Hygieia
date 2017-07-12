@@ -18,7 +18,7 @@
                     onClick: showDetail
                 }),
                 Chartist.plugins.axisLabels({
-                    stretchFactor: 1.8,
+                    stretchFactor: 1.6,
                     axisX: {
                         labels: [
                             moment().subtract(14, 'days').format('MMM DD'),
@@ -35,7 +35,7 @@
             lineSmooth: true,
             fullWidth: true,
             axisY: {
-                offset: 30,
+                offset: 15,
                 showGrid: true,
                 showLabel: true,
                 labelInterpolationFnc: function (value) {
